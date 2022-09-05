@@ -1,0 +1,56 @@
+﻿<Window
+    x:Class="OpenApiEditor.ViewModels.Main.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:uiparts="using:OpenApiEditor.UIParts"
+    xmlns:viewModel="using:OpenApiEditor.ViewModels.Main"
+    mc:Ignorable="d"
+    >
+
+    <Grid x:Name="root">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0">Open Api</TextBlock>
+
+            <!--<uiparts:Schema Grid.Row="1" ViewModel="{}" />-->
+
+            <Grid Grid.Row="1">
+                
+                <ListView x:Name="SideBarItemsListView"
+                          Background="AliceBlue"
+                          ItemsSource="{x:Bind ViewModel.SidebarItems,Mode=OneWay}"
+                          ScrollViewer.HorizontalScrollMode="Enabled"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          SelectionChanged="SideBarItemsListView_SelectionChanged">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="viewModel:MainSidebarItemModel">
+                            <Grid>
+                                <TextBlock Text="{x:Bind Name,Mode=OneWay}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+
+                </ListView>
+            </Grid>
+
+        </Grid>
+
+        <Grid Grid.Column="1">
+            <Frame x:Name="MainFrame"></Frame>
+        </Grid>
+
+    </Grid>
+
+
+</Window>

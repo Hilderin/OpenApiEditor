@@ -1,0 +1,798 @@
+openapi: 3.0.0
+x-stoplight:
+  id: j6ph5yr7thzrs
+info:
+  title: MFA
+  version: '1.0'
+  description: |
+    Contient les EndPoints pour l'application MFA.
+
+    # Codes d'erreur standards
+    - 400 Bad Request : La requête est mal formattée ou un paramètre est manquant ou invalide.
+    - 401 Unauthorized : L'utilisateur n'est pas connecté ou son cookie de session a expiré. L'utilisateur devrait être redirigé à l'accueil du portail ( '/' )
+    - 403 Forbidden : L'utilisateur n'a pas accès au EndPoint demandé.
+    - 404 Not Found : Le EndPoint demandé n'existe pas.
+    - 405 Method Not Allowed : Le EndPoint demandé existe mais la méthode HTTP est invalide.
+    - 500 Internal Server Error : Une erreur de traitement est survenue.
+
+    Les erreurs sont accompagnés d'un contenu standard d'erreur, voir le modèle "error".
+
+
+    #Authentification
+    Avant d'accéder aux EndPoints, un cookie devrait avoir été créé par l'application appelante contenant le ID de session MFA. Le MfaApiProxy va valider ce cookie et s'assurer que la session MFA est valide.
+
+
+    #AutiForgeryToken
+    L'API proxy va retourner 2 cookies permettant de gérer l'antiforegery. Le cookie XSRF-REQUEST-TOKEN est le cookie non httponly qui devra être envoyé dans le http header X-XSRF-TOKEN lors des requêtes non GET.
+    Le cookie X-XSRF-KEY est httponly et contient l'autre partie de la vérification.
+servers:
+  - url: 'http://localhost:3332'
+    description: MFAApiProxy
+  - url: 'http://localhost:30000'
+    description: OmnivoxNode
+paths:
+  /api/mfa/user:
+    get:
+      summary: Obtenir les informations pour notre utilisateur
+      tags: []
+      responses:
+        '200':
+          description: Informations de l'utilisateur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  indicateurMFADisponible:
+                    type: boolean
+                    description: Indique si le MFA est disponible pour l'utilisateur.
+                  indicateurConfigEffectuee:
+                    type: boolean
+                    description: Indique si l'utilisateur a activé le processus MFA.
+                  indicateurMFAObligatoire:
+                    type: boolean
+                    description: Indique si le MFA est obligatoire.
+                  dateLimiteActivationMFA:
+                    type: string
+                    description: Date à partir de laquelle le MFA sera obligatoire. null si pas de date.
+                required:
+                  - indicateurMFADisponible
+                  - indicateurConfigEffectuee
+                  - indicateurMFAObligatoire
+              examples:
+                example-1:
+                  value:
+                    indicateurMFAActif: true
+                    indicateurConfigEffectuee: true
+                    indicateurMFAObligatoire: true
+                    dateLimiteActivationMFA: null
+      operationId: get-api-mfa-config
+      description: Permet d'obtenir les informations sur l'utilisation du MFA pour l'utilisateur.
+    parameters: []
+  /api/mfa/user/devices:
+    get:
+      summary: Liste des devices d'un utilisateur
+      tags: []
+      responses:
+        '200':
+          description: Liste des devices de l'utilisateur.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/device-all-model'
+      operationId: get-api-mfa-devices
+      description: Permet d'obtenir la liste des devices de l'utilisateur.
+    parameters: []
+  '/api/mfa/user/devices/{idDevice}':
+    parameters:
+      - schema:
+          type: string
+        name: idDevice
+        in: path
+        required: true
+        description: ID crypté du device.
+    get:
+      summary: Obtenir l'information sur un device
+      tags: []
+      responses:
+        '200':
+          description: Information sur un device de confiance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/device-all-model'
+      operationId: get-api-mfa-user-device-idDevice
+      description: Permet d'obtenir l'information sur un device de confiance.
+    put:
+      summary: Modification des informations d'un device
+      operationId: put-api-mfa-user-device-idDevice
+      description: Permet de sauvegarder les informations d'un device de confiance.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Nom désiré du device.
+              required:
+                - name
+    delete:
+      summary: Suppression d'un device
+      operationId: delete-api-mfa-user-device-idDevice
+  '/api/mfa/user/devices/{idDevice}/disconnect':
+    parameters:
+      - schema:
+          type: string
+        name: idDevice
+        in: path
+        required: true
+        description: ID crypté du device.
+    get:
+      summary: Déconnexion d'un device
+      tags: []
+      responses: {}
+      operationId: get-api-mfa-user-device-idDevice-disconnect
+      description: Permet d'effectuer une déconnexion des sessions sur un device.
+  /api/mfa/user/methodes-validations:
+    get:
+      summary: Permet d'obtenir la liste des méthodes de validations de l'utilisateur
+      tags: []
+      responses:
+        '200':
+          description: Liste des méthodes de validation de l'utilisateur
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/methodeValidation-all-model'
+              examples:
+                example-1:
+                  value:
+                    - idMethodeValidation: abcd
+                      validationType: Courriel
+                      valueObfuscated: gui*****@gmail.com
+                      dateHeureDerniereUtilisation: '2022-06-03'
+                      indicateurPrincipal: true
+                    - idMethodeValidation: abcd
+                      validationType: SMS
+                      valueObfuscated: 5142****21
+                      dateHeureDerniereUtilisation: '2022-06-03'
+                      indicateurPrincipal: true
+      operationId: get-api-mfa-methodesValidations
+      description: Permet d'obtenir la liste des méthodes de validation pour un utilisateur.
+    parameters: []
+    post:
+      summary: Ajout d'une méthode de validation pour l'utilisateur
+      operationId: post-api-mfa-user-methodesValidations
+      responses:
+        '200':
+          description: La méthode de validation est en cours l'ajout. En attente de confirmation avec l'utilisation du code de sécurité.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/confimation-model'
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: |-
+                    Type de validation:
+                    - Mobile
+                    - Courriel
+                    - SMS
+                value:
+                  type: string
+                  description: 'Valeur (adresse courriel, numéro de cell, etc...)'
+              required:
+                - type
+  '/user/methodes-validations/{idMethodeValidation}':
+    get:
+      summary: Obtenir d'information d'une méthode de validation
+      tags: []
+      responses:
+        '200':
+          description: Information sur une méthode de validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/methodeValidation-all-model'
+              examples:
+                example-1:
+                  value:
+                    idMethodeValidation: abcd
+                    validationType: Courriel
+                    valueObfuscated: gui*****@gmail.com
+                    dateHeureDerniereUtilisation: '2022-06-03'
+                    indicateurPrincipal: true
+      operationId: 'get-user-methodesValidations-idMethodeValidation]'
+      description: Retourne l'information d'une méthode de validation de l'utilisateur.
+    parameters:
+      - schema:
+          type: string
+        name: idMethodeValidation
+        in: path
+        required: true
+        description: ID de la méthode de validation
+    delete:
+      summary: Retrait d'une méthode de validation
+      operationId: delete-user-methodesValidations-idMethodeValidation
+      description: Permet de supprimer une méthode de validation.
+    put:
+      summary: Modification d'une méthode de validation
+      operationId: put-user-methodesValidations-idMethodeValidation
+      description: Permet de sauvegarder une méthode de validation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: string
+                  description: 'Nouvelle valeur (adresse courriel, SMS, etc...)'
+              required:
+                - value
+  '/user/methodes-validations/{idMethodeValidation}/send-security-code':
+    parameters:
+      - schema:
+          type: string
+        name: idMethodeValidation
+        in: path
+        required: true
+        description: ID de la méthode de validation
+    get:
+      summary: Envoi d'un code de sécurité par une méthode de validation
+      tags: []
+      responses: {}
+      operationId: get-user-methodesValidations-idMethodeValidation-sendCode
+      description: Permet d'envoyer un code de sécurité via une méthode de validation.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/confimation-model'
+  /api/mfa/methodes-validations-types:
+    get:
+      summary: Liste des méthodes de validations autorisées
+      tags: []
+      responses:
+        '200':
+          description: Liste des méthodes de validation de l'utilisateur.
+          content:
+            application/json:
+              schema:
+                type: array
+                description: |-
+                  Liste des types de méthodes de validation autorisées:
+                  - Mobile
+                  - Courriel
+                  - SMS
+                items:
+                  type: string
+      operationId: get-api-mfa-methodesValidations
+      description: Permet d'obtenir la liste des méthodes de validation autorisées pour l'utilisateur.
+    parameters: []
+  /api/mfa/validate/security-code:
+    post:
+      summary: Permet de valider un code de sécurité
+      tags: []
+      responses:
+        '200':
+          description: Security code validé.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isValid:
+                    type: boolean
+                    description: Indique si le code de sécurité est valide.
+                  returnUrl:
+                    type: string
+                    description: Url vers lequel redirigé l'utilisateur (si valide)
+                  nbTentativeRestant:
+                    description: 'Nombre de tentative restant pour la saisie du code. Si zéro, l''utilisateur ne pourra pas réessayer, sera bloqué pendant un certain temps et devra se faire réenvoyer un nouveau code.'
+                    type: integer
+      operationId: get-api-mfa-validate-securityCode
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: securityCode
+          description: Code de sécurité saisi. (obligatoire uniquement pour le type de confirmation saisi)
+        - schema:
+            type: string
+          in: query
+          name: securityCodeTicket
+          required: true
+          description: Ticket en lien avec un code de sécurité.
+        - schema:
+            type: boolean
+          in: query
+          name: saveDevice
+          description: Indique si on doit sauvegarder le device dans la liste des devices de confiance.
+          required: true
+      description: Permet de valider un security code.
+    parameters: []
+  '/api/mfa/validate/security-code/{securityCodeTicket}':
+    get:
+      summary: Permet de vérifier si le code de sécurité a été validé
+      tags: []
+      responses:
+        '200':
+          description: État de validation d'un code de sécurité.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isValidated:
+                    type: boolean
+                    description: Indique si le code de sécurité est valide.
+                  returnUrl:
+                    type: string
+                    description: Url vers lequel redirigé l'utilisateur (si valide)
+                  nbSecondesRestant:
+                    type: integer
+                    description: Nombre de secondes restant au processus d'attente de confirmation du token.
+                required:
+                  - isValidated
+      operationId: get-api-mfa-validate-checkSecurityCode
+      parameters: []
+    parameters:
+      - schema:
+          type: string
+        name: securityCodeTicket
+        in: path
+        required: true
+        description: Ticket en lien avec un code de sécurité.
+  /api/mfa/validate/token:
+    post:
+      summary: Validation d'un token (code d'accès)
+      tags: []
+      responses:
+        '200':
+          description: Token validé avec succès.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tkd:
+                    type: string
+                    description: Valeur du tkd à sauvegarder.
+                  tkds:
+                    type: string
+                    description: Valeur du tkds à sauvegarder.
+                  idTicketExterne:
+                    type: string
+                    description: ID du ticket externe permettant de faire le lien entre le processus MFA est un login externe.
+              examples:
+                example-1:
+                  value:
+                    tkd: string
+                    tkds: string
+                    returnUrl: string
+        '400':
+          description: Réponse d'erreur dans le token est invalide où que la validation du token n'a pas pu l'effectuer.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: 'Http status code: 400'
+                  code:
+                    type: string
+                    description: |-
+                      Code d'erreur:
+                      - invalid_token: Token invalide
+                  message:
+                    type: string
+                    description: Message d'erreur plus détaillé.
+                required:
+                  - status
+                  - code
+                  - message
+      operationId: get-api-mfa-validate-token
+      description: |-
+        Validation du token à effectuer.
+
+        IMPORTNANT: Doit passer par le OmnivoxNode directement pour effectuer la validation.
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: code
+          description: Code d'accès à valider.
+        - schema:
+            type: string
+          in: query
+          name: idClientExterne
+          description: ID du client externe
+        - schema:
+            type: string
+          in: query
+          name: application
+          description: Type d'application utilisée
+  /Omnivox/MFA/ValidateDeviceCommand:
+    get:
+      summary: Validation d'un device
+      tags: []
+      responses:
+        '200':
+          description: Information sur la validation du device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isValid:
+                    type: boolean
+                    description: Indique si le device est valide.
+                  newTkds:
+                    type: string
+                    description: Nouvelle valeur du tkds à sauvegarder. (si valide)
+                  urlStartMFA:
+                    type: string
+                    description: Url pour démarrer le processus MFA (si pas valide)
+                  cookieName:
+                    type: string
+                    description: Nom du cookie de session à setter dans le browser (is invalide)
+                  cookieValue:
+                    type: string
+                    description: Valeur du cookie de session à setter dans le browser (is invalide)
+                  cookieExpirationDate:
+                    type: string
+                    description: Date d'expiration du cookie de session à setter dans le browser (is invalide)
+                required:
+                  - isValid
+      operationId: get-api-mfa-validate-device
+      description: Permet de valider un device
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: idUserExterne
+          description: ID du user externe
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: idTicketExterne
+          required: true
+          description: ID temporaire en provenance du système externe.
+        - schema:
+            type: string
+          in: query
+          description: Type d'application utilisée
+          name: application
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: deviceInfo
+          description: Information sur le device en format querystring.
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: tkd
+          description: Valeur du tkd
+        - schema:
+            type: string
+          in: query
+          name: tkds
+          description: Valeur du tkds
+    parameters: []
+components:
+  schemas:
+    validation-error:
+      title: validation-error
+      type: object
+      description: Modèle pour retourner les erreurs de validation.
+      x-examples:
+        example-1:
+          status: '400'
+          code: ValidationError
+          message: Au moins un champ est invalide.
+          errors:
+            - field: Nom
+              message: Le nom est requis.
+      properties:
+        status:
+          type: string
+          description: |-
+            Code du HttpStatus associé. Devrait correspondre au httpstatus retourné par le serveur http.
+            Toujours 400.
+        code:
+          type: string
+          description: |-
+            Code d'erreur.
+            Toujours: ValidationError
+        message:
+          type: string
+          description: |
+            Message globale de l'erreur de validation.
+            Optionnel si uniquement des erreurs sur les champs sont présents.
+        errors:
+          type: array
+          description: |-
+            Liste des erreurs de validation.
+
+            À noter que si plusieurs erreurs de validation existent pour un même champ, ces erreurs seront concaténées dans le champ message. Donc, un champ ne pourra pas être présent plus d'un fois dans la liste. Idem pour les erreurs globales.
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Nom du champ.
+              message:
+                type: string
+                description: 'Description de l''erreur de validation. Si plusieurs erreurs pour le même champ, les erreurs seront séparées par des \r\n.'
+            required:
+              - field
+              - message
+      required:
+        - status
+        - code
+        - errors
+    error:
+      title: error
+      type: object
+      description: Modèle pour les erreurs de traitement.
+      properties:
+        status:
+          type: string
+          description: Code du HttpStatus associé. Devrait correspondre au httpstatus retourné par le serveur http.
+        code:
+          type: string
+          description: Code d'erreur
+        message:
+          type: string
+          description: Message de l'erreur.
+      required:
+        - status
+        - code
+        - message
+    data-list:
+      title: data-list
+      x-stoplight:
+        id: qyq3nmtgnsuj4
+      type: object
+      description: Retour des données sous format d'une liste.
+      x-internal: false
+      x-examples:
+        example-1:
+          total: 0
+          count: 0
+          totalPages: 0
+          filterErrors:
+            - propertyName: programme
+              invalidValues:
+                - ABCDE
+                - TYUIO
+      properties:
+        total:
+          type: integer
+          description: Nombre total de records.
+        count:
+          type: number
+          description: Nombre de records retournés.
+        totalPages:
+          type: integer
+          description: Nombre total de pages.
+    filtres-model:
+      title: filtres-model
+      x-stoplight:
+        id: ou0dmiwy0600x
+      type: object
+      description: |
+        Filtre à utiliser dans une querystring pour les différentes recherches.
+
+        Format: {"propertyName":["value1", "value2"],"propertyName2":["value1", "value2"],"search":"valeur"}
+
+        Chaque propriété est considéré comme un AND alors que chaque valeur est un OR.
+
+        À noter que la propriété "search" est un filtre spécial optionnel qui reçoit une seule valeur et qui permet d'effectuer une recherche 'rapide' sur plusieurs champs. La liste des champs est personnalisée dans le backend pour chaque objet.
+
+        ## Gestion des string
+        Pour les filtres sur des propriétés 'string', l'utilisation des wildcards est autorisé (*, ?, _, %).
+        - '*' ou '%' = Remplace n'importe quel caractère
+        - '?' ou '_' = Remplace un caractère
+
+        **Pour les noms et prénoms:** Si aucun caractère de remplacement n'est présent dans la valeur du filtre, un * est ajouté à la fin automatiquement.
+
+        ## Gestion des valeurs numériques et dates
+        Pour les filtres sur des propriétés numériques ou date, l'utilisation des opérateurs est permis.
+        Si pas d'opérateur de spécifié, l'opérateur égal sera utilisé.
+
+        Format des dates: 'yyyy-MM-dd' ou 'yyyy-MM-dd HH:mm:ss'.
+
+        Il existe 2 manières d'utiliser les opérateurs:
+        - Directement dans la value, ex: [">=6"]
+        - Dans une value précédente: ex: [">=","6"]
+
+
+        ### Opérateurs:
+        - '=' ou '==' : La propriété doit être égale
+        - '<' : La propriété doit être plus petite
+        - '<=' ou '≤' : La propriété doit être plus petite ou égale
+        - '>' : La propriété doit être plus grande
+        - '>=' ou '≥' : La propriété doit être plus grande ou égale
+        - 'A..B' : La propriété doit être entre A et B (inclusivement). À noter que pour les types date, la valeur de B sera mise à 23:59:59 si aucune heure, minute, seconde n'est spécifié.
+
+        ## Exemples:
+
+        Recherche les étudiants qui possèdent le cours à risque '000ARP00':
+
+            filters={"coursARisque":["000ARP00"]}
+
+
+        Recherche les étudiants qui possède 6 cours et plus:
+
+            filters={"nbCours":["≥","6"]}
+
+        Recherche les étudiants qui dont la date de dernier suivi est entre 2022-01-01 et 2022-02-01:
+
+            filters={"dateHeureDerniereIntervention":["2022-01-01..2022-02-01"]}
+            
+        Recherche des étudiants dont le prénom commence par 'Gui' et dont la SPE est 1, 2 ou 3:
+
+            filters={"prenom":["Gui*"],"spe":["1","2","3"]}
+      examples:
+        - uniteOrg:
+            - REG
+          programme:
+            - 420.A0
+            - 300.B0
+      x-examples:
+        example-1:
+          uniteOrg:
+            - REG
+          programme:
+            - 420.A0
+            - 300.B0
+          search: Auger
+      properties:
+        '[propertyName]':
+          type: array
+          description: Liste des filtres sous forme de dictionaire properyName/liste de valeurs.
+          items:
+            type: string
+        search:
+          type: string
+          description: Élément de recherche global saisie par l'utilisateur au dessus du tableau. (optionnel)
+    device-base-model:
+      title: device-base-model
+      x-stoplight:
+        id: 9q51pm6pcv632
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nom 'affiché' du device.
+        dateHeureCreation:
+          type: string
+          description: Date et heure de création du device.
+        dateHeureDerniereUtilisateur:
+          type: string
+          description: Date et heure de dernière utilisation.
+        etat:
+          type: number
+          description: |-
+            État:
+            - 0 = Inactif
+            - 1 = Actif
+        deviceType:
+          type: string
+          description: |-
+            Type de device:
+            - W = Web
+            - M = Mobile
+            - D = Desktop
+        userAgent:
+          type: string
+          description: User-Agent si le device est Web
+        ip:
+          type: string
+          description: Adresse IP du device.
+        os:
+          type: string
+          description: OS du device
+        browser:
+          type: string
+          description: Nom du browser si device web
+    device-all-model:
+      title: device-all-model
+      x-stoplight:
+        id: fkfh3ls9khckn
+      allOf:
+        - type: object
+          properties:
+            idDevice:
+              type: string
+              description: ID crypté du device
+          required:
+            - idDevice
+        - $ref: '#/components/schemas/device-base-model'
+      x-examples:
+        example-1:
+          idDevice: string
+          name: string
+          dateHeureCreation: string
+          dateHeureDerniereUtilisateur: string
+          etat: 0
+          deviceType: string
+          userAgent: string
+          ip: string
+          os: string
+          browser: string
+    methodeValidation-all-model:
+      title: methodeValidation-all-model
+      x-stoplight:
+        id: 59vwvs680pz0u
+      type: object
+      description: ''
+      x-examples:
+        example-1:
+          idMethodeValidation: abcd
+          validationType: Courriel
+          valueObfuscated: gui*****@gmail.com
+          dateHeureDerniereUtilisation: '2022-06-03'
+          indicateurPrincipal: true
+      properties:
+        idMethodeValidation:
+          type: string
+          description: ID crypté de la méthode de validation pour l'utilisateur.
+        type:
+          type: string
+          description: |-
+            Type de validation:
+            - Mobile: Omnivox mobile
+            - Courriel: Envoi d'un courriel
+            - SMS: Envoi d'un SMS
+        valueObfuscated:
+          type: string
+          description: Valeur avec des caractères de cachés.
+        dateHeureDerniereUtilisation:
+          type: string
+          description: Date et heure de la dernière utilisation de la méthode de validation.
+        indicateurPrincipal:
+          type: boolean
+          description: Méthode de validation principale pour l'utilisateur.
+      required:
+        - idMethodeValidation
+        - type
+        - valueObfuscated
+        - dateHeureDerniereUtilisation
+        - indicateurPrincipal
+    confimation-model:
+      title: confimation-model
+      x-stoplight:
+        id: 75g32phrolt11
+      type: object
+      properties:
+        confirmationType:
+          type: string
+          description: |-
+            Indique le type de confirmation à s'attendre:
+            - Saisi: L'utilisateur doit saisir le code de sécurité
+            - Check: Le web doit caller le EndPoint checkSecurityCode régulièrement pour vérifier si la confirmation a été effecutée.
+        securityCodeTicket:
+          type: string
+          description: Ticket de vérification du check du security. Présent uniquement pour le confirmationType 'Check'.
+      required:
+        - confirmationType
+  parameters: {}

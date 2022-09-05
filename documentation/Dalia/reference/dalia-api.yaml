@@ -1,0 +1,1627 @@
+openapi: 3.0.0
+x-stoplight:
+  id: 4fuow1cigd72l
+info:
+  title: Dalia
+  version: '1.0'
+  description: |
+    Contient les EndPoints pour l'application Dalia.
+
+    # Codes d'erreur standards
+    - 400 Bad Request : La requête est mal formattée ou un paramètre est manquant ou invalide.
+    - 401 Unauthorized : L'utilisateur n'est pas connecté ou son cookie de session a expiré. L'utilisateur devrait être redirigé à l'accueil du portail ( '/' )
+    - 403 Forbidden : L'utilisateur n'a pas accès au EndPoint demandé.
+    - 404 Not Found : Le EndPoint demandé n'existe pas.
+    - 405 Method Not Allowed : Le EndPoint demandé existe mais la méthode HTTP est invalide.
+    - 500 Internal Server Error : Une erreur de traitement est survenue.
+
+    Les erreurs sont accompagnés d'un contenu standard d'erreur, voir le modèle "error".
+servers:
+  - url: 'http://localhost:5000'
+  - description: ''
+    url: 'http://localhost:3332'
+paths:
+  /api/dalia/user:
+    get:
+      summary: Informations sur l'utilisateur connecté
+      tags: []
+      responses:
+        '200':
+          description: Information sur l'utilisateur connecté.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nom:
+                    type: string
+                    description: Nom de l'utilisateur.
+                  prenom:
+                    type: string
+                    description: Prénom de l'utilisateur.
+                  langueISO:
+                    type: string
+                    description: |-
+                      Langue de l'utilisateur pour l'interface de Dalia.
+                      Langues supportées:
+                      fr-CA = Français
+                      en-CA = Anglais
+                      es-CO = Espagnol Colombie
+                      es-ES = Espagnol (Européen)
+                  env:
+                    type: string
+                    description: |-
+                      Environnement courant.
+                      PROD = Production
+                      TEST = Test (accessible par les clients)
+                      PREP = Pré-prod (préinstalle la mise à jour)
+                      SUP = Environnement pour le soutien à la clientèle (non accessible par les clients)
+                      QA = Environnement interne de staging
+                      DEV = Pour les programmeurs
+                  superUtilisateur:
+                    type: boolean
+                    description: Indique si l'utilisateur est un superuser Skytech.
+                  returnUrl:
+                    type: string
+                    description: 'Url pour retourner à Omnivox (url complet incluant le https://domaine)'
+                  quitUrl:
+                    type: string
+                    description: 'Url pour quitter Omnivox (url complet incluant le https://domaine)'
+                  commentUrl:
+                    type: string
+                    description: Url vers le module de commentaires d'Omnivox.
+                  nomCollege:
+                    type: string
+                    description: Le nom de l'établissement scolaire
+                  tooltipCollege:
+                    type: string
+                    description: Le tooltip pour le lien vers l'établissement scolaire
+                  collegeUrl:
+                    type: string
+                    description: L'url de l'étabissement scolaire
+                  dateHeureDerniereAnalyse:
+                    type: string
+                    description: 'Date et heure de la dernière analyse AI. Si aucun calcul n''a été effectué, sera null.'
+                    format: date-time
+                  personnalisations:
+                    type: object
+                    description: Personnalisations pour l'utilisateur en fonction de l'établissement.
+                    required:
+                      - titreNumeroEtudiant
+                    properties:
+                      titreNumeroEtudiant:
+                        type: string
+                        description: Nom utilisé pour nommer un numéro d'étudiant.
+                  modules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          description: |-
+                            Code unique du module.
+
+                            - DALIA_EtudiantsARisque: Module Dalia des étudiants à risque
+                            - DALIA_PriseActions: Module Dalia de Prise d'actions
+                            - Autres: Codes de module Omnivox (externe à Dalia)
+                        titre:
+                          type: string
+                          description: Titre du module à afficher dans le module.
+                        url:
+                          type: string
+                          description: Url pour module externe.
+                        urlImage:
+                          type: string
+                          description: Url de l'image des modules externes (les images sont des svg).
+                        externe:
+                          type: boolean
+                          description: Indique si ce module est interne à Dalia ou Externe (non géré dans le projet vuejs)
+                        ordre:
+                          type: integer
+                          description: 'Order d''affichage du module, 1 base, du plus petit au plus grand.'
+                      required:
+                        - code
+                        - titre
+                        - externe
+                        - ordre
+                  permissions:
+                    type: array
+                    description: |-
+                      Liste des codes de permissions:
+                      - ModuleEtudiantsARisque: Permet d'accéder au module Étudiants à risque
+                      - ModulePriseActions: Permet d'accéder au module Prise d'actions
+                      - ModuleSuiviReussite: L'utilisateur a accès à au moins un module de suivi de la réussite Léa
+                      - ConsultationNotes: L'utilisateur a accès à consulter les notes des étudiants.
+                      - Mio: L'utilisateur peut envoyer des Mio (accès au module Mio).
+                    items:
+                      type: string
+                  settings:
+                    type: object
+                    description: 'Object contenant la liste des settings de l''utilisateur (id: value)'
+                    properties:
+                      '[id]':
+                        type: string
+                        description: Identifiant du setting.
+                required:
+                  - nom
+                  - prenom
+                  - langueISO
+                  - env
+                  - superUtilisateur
+                  - returnUrl
+                  - quitUrl
+                  - commentUrl
+                  - nomCollege
+                  - tooltipCollege
+                  - collegeUrl
+                  - personnalisations
+                  - modules
+                  - permissions
+                  - settings
+              examples:
+                example-1:
+                  value:
+                    nom: Lebrun
+                    prenom: Guillaume
+                    langueISO: string
+                    env: QA
+                    superUtilisateur: false
+                    nomCollege: Collège de Rimouski
+                    tooltipCollege: Retour au site général du Collège de Rimouski
+                    collegeUrl: 'http://www.cegep-rimouski.qc.ca'
+                    returnUrl: 'https://cegep-rimouski.qa.omnivox.ca/intr/'
+                    quitUrl: 'https://cegep-rimouski.qa.omnivox.ca/intr/module/identification/quitter.aspx'
+                    commentUrl: 'http://cegep-rimouski.qa.omnivox.ca/WebApplication/Commun.InfosGenerales/Commentaire.aspx?oid=VUJjdW6BM1w3lHRrVC5ZPWF0ZFU3WGtbSW1RM1k9XklpfmdX'
+                    dateHeureDerniereAnalyse: '2022-04-04 23:25:44'
+                    personnalisations:
+                      titreNumeroEtudiant: Numéro d'étudiant
+                    modules:
+                      - code: DALIA_ETUDIANTS_A_RISQUE
+                        titre: Étudiants à risque
+                        url: null
+                        urlImage: null
+                        externe: false
+                        ordre: 1
+                      - code: DALIA_PRISE_ACTION
+                        titre: Prise d'actions
+                        url: null
+                        urlImage: null
+                        externe: false
+                        ordre: 2
+                      - code: ASSE
+                        titre: Module Omnivox
+                        url: /WebApplication.module
+                        urlImage: /images/General/module.svg
+                        externe: true
+                        ordre: 3
+                    permissions:
+                      - EtudiantsARisque
+                      - PriseActions
+                      - Horaire
+                      - etc...
+                    settings:
+                      cle1: valeur1
+                      cle2: valeur2
+                example-AndréeAnne-RIMQA:
+                  value:
+                    nom: Bernier
+                    prenom: Andrée-Anne
+                    langueISO: fr-CA
+                    env: QA
+                    superUtilisateur: false
+                    nomCollege: Collège de Rimouski
+                    collegeUrl: 'http://www.cegep-rimouski.qc.ca'
+                    tooltipCollege: ''
+                    returnUrl: 'https://cegep-rimouski.qa.omnivox.ca/intr/'
+                    quitUrl: 'https://cegep-rimouski.qa.omnivox.ca/intr/module/identification/quitter.aspx'
+                    commentUrl: 'http://cegep-rimouski.qa.omnivox.ca/WebApplication/Commun.InfosGenerales/Commentaire.aspx?oid=VUJjdW6BM1w3lHRrVC5ZPWF0ZFU3WGtbSW1RM1k9XklpfmdX'
+                    dateHeureDerniereAnalyse: '2022-04-04 23:25:44'
+                    personnalisations:
+                      titreNumeroEtudiant: Numéro de matricule
+                    modules:
+                      - code: DALIA_EtudiantsARisque
+                        titre: Étudiants à risque
+                        url: null
+                        urlImage: null
+                        externe: false
+                        ordre: 1
+                      - code: DALIA_PriseActions
+                        titre: Prise d'actions
+                        url: null
+                        urlImage: null
+                        externe: false
+                        ordre: 2
+                      - code: ASSR
+                        titre: Léa - Suivi de la réussite
+                        url: /intr/Module/ServicesExterne/Skytech.aspx?IdServiceSkytech=Skytech_Omnivox&lk=%2Fempl%2FASSR%2F&IdService=ASSR&C=RIM&E=Q&L=FRA&Ref=20220601154358
+                        urlImage: /Images/General/IconesSVG/assr.svg
+                        externe: true
+                        ordre: 3
+                    permissions:
+                      - ModuleEtudiantsARisque
+                      - ModulePriseActions
+                    settings:
+                      cle1: valeur1
+                      cle2: valeur2
+      operationId: get-api-dalia-user
+      description: Retourne les informations sur le user connecté.
+  '/api/dalia/sessions/{anSession}/etudiants':
+    parameters:
+      - schema:
+          type: string
+        name: anSession
+        in: path
+        required: true
+        description: Année-session sous le format (yyyys)
+    get:
+      summary: Obtenir la liste des étudiants d'une session
+      tags: []
+      responses:
+        '200':
+          description: Liste des étudiants de la session.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/data-list'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            idEtudiant:
+                              type: string
+                              description: |-
+                                Identifiant unique de l'étudiant.
+                                Cet id est crée et va changer à chaque appel de l'api.
+                            numero:
+                              type: string
+                              description: Numéro de l'étudiant formatté selon l'établissement.
+                            nom:
+                              type: string
+                              description: Nom de l'étudiant.
+                            prenom:
+                              type: string
+                              description: Prénom de l'étudiant.
+                            numeroProgramme:
+                              type: string
+                              description: Numéro de programme de l'étudiant formatté.
+                            titreProgramme:
+                              type: string
+                              description: Titre du programme dans la langue de l'utilisateur.
+                            spe:
+                              type: integer
+                              description: SPE de l'étudiant.
+                            classificationRisqueAbandon:
+                              type: integer
+                              description: |-
+                                Risque d'abandon:
+                                - 0 = Non classé
+                                - 1 = En voie de persévérer
+                                - 2 = À surveiller
+                                - 3 = À risque d'abandon
+                            classificationRisqueEchec:
+                              type: integer
+                              description: |-
+                                Risque d'échec:
+                                - 0 = Non classé
+                                - 1 = En voie de réussite
+                                - 2 = À surveiller
+                                - 3 = À risque d'échec
+                            nbCours:
+                              description: Nombre de cours total de l'étudiant à la session.
+                              type: integer
+                            coursARisque:
+                              type: array
+                              description: Liste des cours à risque.
+                              items:
+                                type: object
+                                properties:
+                                  numero:
+                                    type: string
+                                    description: Numéro du cours formatté selon l'établissement.
+                                  titre:
+                                    type: string
+                                    description: Titre du cours selon la langue de l'utilisateur.
+                                  classificationRisqueEchec:
+                                    type: integer
+                                    description: |-
+                                      Risque d'échec du cours:
+                                      - 2 = À surveiller
+                                      - 3 = À risque d'échec
+                            nbIntervenants:
+                              type: integer
+                              description: Nombre d'intervenants qui suivent l'étudiant.
+                            dateHeureDerniereIntervention:
+                              type: string
+                              description: |-
+                                Date et heure de la dernière intervention de l'utilisateur pour l'étudiant
+                                null si aucune intervention.
+                              format: date-time
+              examples:
+                example-1:
+                  value:
+                    total: 1389
+                    count: 2
+                    totalPages: 695
+                    data:
+                      - classificationRisqueAbandon: 2
+                        coursARisque:
+                          - numero: 388-236-RK
+                            titre: Projet d'engagement social
+                            classificationRisqueEchec: 3
+                          - numero: 388-413-RK
+                            titre: Intervention sociale et conditions de santé
+                            classificationRisqueEchec: 3
+                          - numero: 388-518-RK
+                            titre: Intervention sociale en contexte socio-juridique
+                            classificationRisqueEchec: 3
+                          - numero: 388-519-RK
+                            titre: Intervention sociale en situation de crise
+                            classificationRisqueEchec: 3
+                          - numero: 350-383-RK
+                            titre: Intégrité psychologique et santé mentale
+                            classificationRisqueEchec: 2
+                          - numero: 388-318-RK
+                            titre: Défense des droits sociaux
+                            classificationRisqueEchec: 2
+                          - numero: 388-319-RK
+                            titre: Intervention sociale auprès des groupes et des communautés
+                            classificationRisqueEchec: 2
+                          - numero: 388-517-RK
+                            titre: Stage d'intervention sociale I
+                            classificationRisqueEchec: 2
+                        nom: Boutin
+                        idEtudiant: VkpjYTkzVTdMcTNrMHgvMW1sRXMxMHpydTR2QjNQbE00SnVka1dKMStFQT0_
+                        numero: '2196596'
+                        prenom: Amélie
+                        numeroProgramme: 388.A0
+                        titreProgramme: Social Service
+                        spe: 3
+                        classificationRisqueEchec: 2
+                        nbCours: 15
+                        nbIntervenants: 0
+                        dateHeureDerniereIntervention: null
+                      - classificationRisqueAbandon: 2
+                        coursARisque:
+                          - numero: 201-FEF-03
+                            titre: Mathématiques II
+                            classificationRisqueEchec: 3
+                          - numero: 241-FEE-RK
+                            titre: Matériaux et traitements thermiques
+                            classificationRisqueEchec: 3
+                          - numero: 242-FEB-RK
+                            titre: Dessin technique II
+                            classificationRisqueEchec: 3
+                          - numero: 109-113-RK
+                            titre: 'Santé et cond,. phys. général'
+                            classificationRisqueEchec: 2
+                          - numero: 241-FED-RK
+                            titre: Métrologie
+                            classificationRisqueEchec: 2
+                          - numero: 604-T00-RK
+                            titre: Anglais de base appliqué aux techniques
+                            classificationRisqueEchec: 2
+                        nom: Turcotte
+                        idEtudiant: VXNzNkhFN0FlYlEzaXBHSEhuMDZwb2RXUU1PS3Y2WS9mSGwzM3piUTBSRT0_
+                        numero: '2134847'
+                        prenom: Melanie
+                        numeroProgramme: 241.A0
+                        titreProgramme: Mechanical Engineering Technology
+                        spe: 2
+                        classificationRisqueEchec: 3
+                        nbCours: 10
+                        nbIntervenants: 0
+                        dateHeureDerniereIntervention: null
+      operationId: get-api-sessions-anSession-etudiants
+      description: Permet d'obtenir la liste des étudiants d'une session.
+      parameters:
+        - $ref: '#/components/parameters/filters'
+        - schema:
+            type: string
+          in: query
+          name: properties
+          description: 'Liste des propriétés à inclure séparées par des virgules, ex: numero,nom'
+        - schema:
+            type: string
+          in: query
+          name: limit
+          description: Nombre de records par page
+        - schema:
+            type: string
+          in: query
+          name: page
+          description: Numéro de la page désirée
+        - schema:
+            type: string
+          in: query
+          name: sortby
+          description: 'Liste des propriétés à inclure dans le tri séparées par des virgules. Ex: nom,prenom'
+        - schema:
+            type: string
+          in: query
+          name: sortdesc
+          description: 'Liste des sens de tri pour chaque propriété à inclure dans le tri séparées par des virgules. Ex: true,false'
+        - $ref: '#/components/parameters/queryOutput'
+  '/api/dalia/sessions/{anSession}/etudiants/{idEtudiant}/inscriptions':
+    parameters:
+      - schema:
+          type: string
+        name: anSession
+        in: path
+        required: true
+        description: Année-session sous le format (yyyys)
+      - schema:
+          type: string
+        name: idEtudiant
+        in: path
+        required: true
+        description: ID crypté de l'étudiant
+    get:
+      summary: Liste des inscriptions d'un étudiant
+      tags: []
+      responses:
+        '200':
+          description: Liste des inscriptions de l'étudiant.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    numeroCours:
+                      type: string
+                      description: Numéro de cours formatté.
+                    titreCours:
+                      type: string
+                      description: Titre du cours
+                    numeroGroupe:
+                      type: string
+                      description: Numéro du groupe formatté
+                    classificationRisqueEchec:
+                      description: |-
+                        Risque d'échec:
+                        - 0 = Non classé
+                        - 1 = En voie de réussite
+                        - 2 = À surveiller
+                        - 3 = À risque d'échec
+                      type: integer
+                    tendanceRisqueEchec:
+                      type: integer
+                      description: |-
+                        Tendance du risque d'échec:
+                        - null = Non calculé
+                        - -1 = En diminution
+                        - 0 = Stable
+                        - 1 = En augmentation
+                        - 9 = Incertain
+                    noteFinale:
+                      type: integer
+                      description: Note finale de l'étudiant. null si pas de note finale.
+                    seuilPassageNoteFinale:
+                      type: integer
+                      description: 'Seuil de réussite du cours (habituellement 60). Le seuil de passage est sur la pondération de la note finale (ex: 60 / 100).'
+                    ponderationNoteFinale:
+                      type: integer
+                      description: Pondération de la note finale (dénominateur de noteFinale). Toujours 100 à moins que la po
+                    codeRemarqueFinal:
+                      type: string
+                      description: Code de remarque de la note finale de l'étudiant.
+                    moyenneGroupeNoteFinale:
+                      type: number
+                      description: Moyenne de groupe de la note finale. (sur la ponderationNoteFinale)
+                    noteEvaluation:
+                      description: Note des évaluations de l'étudiant (sur la pondération évaluation). Null si aucune évaluation avec des notes.
+                      type: number
+                    pourcentageAccumuleNoteEvaluation:
+                      type: number
+                      description: Nombre de points total des évaluations pour lesquelles une note est présente. null = aucune évaluation ne possède de note.
+                    moyenneGroupeNoteEvaluation:
+                      type: number
+                      description: Moyenne de groupe des notes d'évaluation (sur 100). null si pas de moyenne de groupe.
+                    noteEvaluationProjetee:
+                      description: Note d'évaluation projetée (sur 100%). null si pas de note d'évaluation.
+                      type: number
+                    nbHeureAbsence:
+                      type: number
+                      description: Nombre d'heures d'absences. Nombre à virgule. (1.5 = 1h30)
+                    etatReussite:
+                      type: integer
+                      description: |-
+                        État de la réussite du cours (en fonction de la note finale):
+                        - 1 = Réussi
+                        - 2 = En cours
+                        - 4 = À refaire (ex: Incomplet)
+                        - 5 = Échec
+                        - 6 = Abandon
+                    etatCalcule:
+                      type: integer
+                      description: |-
+                        État calculé du cours:
+                        - PND = Prédiction – Non disponible
+                        - PRE = Prédiction – En voie de réussite
+                        - PAS = Prédiction – À surveiller
+                        - PEC = Prédiction – À risque d’échec
+                        - ARE = À venir – Réussite
+                        - AEC = À venir – Échec
+                        - FRE = Final – Réussite
+                        - FEC = Final – Échec
+                        - FRF = Final – À refaire
+                        - FAB = Final – Abandon
+                    nbPointsManquantsReussite:
+                      type: number
+                      description: 'Nombre de points manquants à l''étudiant pour la réussite du cours. Ce nombre de points est sur 100. Si ce champ est null, c''est qu''il est impossible de calculer cette valeur. Si zéro, l''étudiant est assuré de passer son cours.'
+                    urlLeaSuiviReussite:
+                      type: string
+                      description: 'Url vers Léa suivi de la réussite pour ce cours-groupe. Null si l''utilisateur a pas accès à Léa Suivi de la réussite (url complet incluant le https://domaine)'
+                    dataEvolutionNoteEvaluation:
+                      type: array
+                      description: Données pour l'évoluation de la note d'évalution de l
+                      items:
+                        type: object
+                        properties:
+                          note:
+                            description: Note de l'étudiant (sur le pourcentage accumulé)
+                            type: number
+                          pourcentageAccumule:
+                            description: Pourcentage accumulé pour l'étudiant.
+                            type: number
+                          notePonderee:
+                            type: number
+                            description: Note sur 100.
+                          date:
+                            type: string
+                            description: Date de la note.
+                    dataEvolutionMoyenneNoteEvaluation:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          moyennePonderee:
+                            type: number
+                            description: Moyenne du groupe (sur 100).
+                          pourcentageAccumule:
+                            type: number
+                            description: Pourcentage accumulé pour le groupe
+                          date:
+                            type: string
+                            description: Date de la modification.
+                            format: date-time
+                  required:
+                    - numeroCours
+                    - titreCours
+                    - numeroGroupe
+                    - classificationRisqueEchec
+                    - ponderationNoteFinale
+                    - nbHeureAbsence
+                    - etatReussite
+                    - etatCalcule
+                    - dataEvolutionNoteEvaluation
+                    - dataEvolutionMoyenneNoteEvaluation
+              examples:
+                example-1:
+                  value:
+                    - numeroCours: 109-113-RK
+                      titreCours: 'Santé et cond,. phys. général'
+                      numeroGroupe: '10001'
+                      classificationRisqueEchec: 2
+                      tendanceRisqueEchec: 1
+                      etatReussite: 5
+                      etatReussiteCalcule: 5
+                      noteFinale: 55
+                      ponderationNoteFinale: 100
+                      codeRemarqueFinal: EC
+                      moyenneNoteFinale: 59
+                      noteEvaluationProjetee: 73
+                      noteEvaluation: 72.7
+                      pourcentageAccumuleNoteEvaluation: 100
+                      moyenneGroupeNoteEvaluation: 66
+                      nbHeureAbsence: 2
+                      nbPointsManquantsReussite: 0
+                      seuilPassageNoteFinale: 60
+                      dataEvolutionNoteEvaluation:
+                        - note: 5
+                          pourcentageAccumule: 5
+                          notePonderee: 100
+                          date: '2022-02-11T00:00:00'
+                        - note: 20
+                          pourcentageAccumule: 25
+                          notePonderee: 80
+                          date: '2022-05-19T00:00:00'
+                        - note: 26
+                          pourcentageAccumule: 45
+                          notePonderee: 58
+                          date: '2022-05-19T00:00:00'
+                        - note: 40
+                          pourcentageAccumule: 60
+                          notePonderee: 66
+                          date: '2022-05-19T00:00:00'
+                        - note: 55
+                          pourcentageAccumule: 80
+                          notePonderee: 69
+                          date: '2022-05-30T00:00:00'
+                        - note: 73
+                          pourcentageAccumule: 100
+                          notePonderee: 73
+                          date: '2022-05-30T00:00:00'
+                      dataEvolutionMoyenneNoteEvaluation:
+                        - moyennePonderee: 89
+                          pourcentageAccumule: 5
+                          date: '2022-05-19T00:00:00'
+                        - moyennePonderee: 54
+                          pourcentageAccumule: 25
+                          date: '2022-05-19T00:00:00'
+                        - moyennePonderee: 53
+                          pourcentageAccumule: 45
+                          date: '2022-05-19T00:00:00'
+                        - moyennePonderee: 59
+                          pourcentageAccumule: 65
+                          date: '2022-05-30T00:00:00'
+                        - moyennePonderee: 66
+                          pourcentageAccumule: 85
+                          date: '2022-05-30T00:00:00'
+                    - numeroCours: 340-102-MQ
+                      titreCours: L'être humain
+                      numeroGroupe: '10003'
+                      classificationRisqueEchec: 3
+                      tendanceRisqueEchec: 0
+                      etatReussite: 2
+                      noteFinale: null
+                      ponderationNoteFinale: 100
+                      codeRemarqueFinal: ''
+                      moyenneNoteFinale: 73
+                      noteEvaluationProjetee: 64
+                      noteEvaluation: 64.4
+                      pourcentageAccumuleNoteEvaluation: 100
+                      moyenneGroupeNoteEvaluation: 74
+                      nbHeureAbsence: 0
+                      dataEvolutionNoteEvaluation:
+                        - note: 1
+                          pourcentageAccumule: 5
+                          notePonderee: 20
+                          date: '2022-03-11T00:00:00'
+                        - note: 6
+                          pourcentageAccumule: 10
+                          notePonderee: 56
+                          date: '2022-03-20T00:00:00'
+                        - note: 9
+                          pourcentageAccumule: 15
+                          notePonderee: 57
+                          date: '2022-03-28T00:00:00'
+                        - note: 15
+                          pourcentageAccumule: 25
+                          notePonderee: 58
+                          date: '2022-04-19T00:00:00'
+                        - note: 18
+                          pourcentageAccumule: 30
+                          notePonderee: 59
+                          date: '2022-04-19T00:00:00'
+                        - note: 21
+                          pourcentageAccumule: 35
+                          notePonderee: 60
+                          date: '2022-05-04T00:00:00'
+                        - note: 38
+                          pourcentageAccumule: 60
+                          notePonderee: 63
+                          date: '2022-05-11T00:00:00'
+                        - note: 43
+                          pourcentageAccumule: 65
+                          notePonderee: 66
+                          date: '2022-05-29T00:00:00'
+                        - note: 47
+                          pourcentageAccumule: 70
+                          notePonderee: 68
+                          date: '2022-05-29T00:00:00'
+                        - note: 64
+                          pourcentageAccumule: 100
+                          notePonderee: 64
+                          date: '2022-05-31T00:00:00'
+                      dataEvolutionMoyenneNoteEvaluation:
+                        - moyennePonderee: 59
+                          pourcentageAccumule: 5
+                          date: '2022-03-30T00:00:00'
+                        - moyennePonderee: 72
+                          pourcentageAccumule: 10
+                          date: '2022-03-30T00:00:00'
+                        - moyennePonderee: 71
+                          pourcentageAccumule: 15
+                          date: '2022-03-30T00:00:00'
+                        - moyennePonderee: 71
+                          pourcentageAccumule: 25
+                          date: '2022-04-19T00:00:00'
+                        - moyennePonderee: 73
+                          pourcentageAccumule: 30
+                          date: '2022-05-03T00:00:00'
+                        - moyennePonderee: 73
+                          pourcentageAccumule: 60
+                          date: '2022-05-04T00:00:00'
+                        - moyennePonderee: 74
+                          pourcentageAccumule: 65
+                          date: '2022-05-23T00:00:00'
+                        - moyennePonderee: 75
+                          pourcentageAccumule: 95
+                          date: '2022-05-29T00:00:00'
+                        - moyennePonderee: 76
+                          pourcentageAccumule: 100
+                          date: '2022-05-29T00:00:00'
+                        - moyennePonderee: 74
+                          pourcentageAccumule: 100
+                          date: '2022-05-31T00:00:00'
+                    - numeroCours: 504-204-RK
+                      titreCours: Photographie - prise de vue
+                      numeroGroupe: '10001'
+                      classificationRisqueEchec: 2
+                      tendanceRisqueEchec: -1
+                      etatReussite: 1
+                      noteFinale: 78
+                      ponderationNoteFinale: 100
+                      codeRemarqueFinal: ''
+                      moyenneNoteFinale: 71
+                      noteEvaluationProjetee: 78
+                      noteEvaluation: 74.4
+                      pourcentageAccumuleNoteEvaluation: 95
+                      moyenneGroupeNoteEvaluation: 79
+                      nbHeureAbsence: 0
+                      dataEvolutionNoteEvaluation:
+                        - note: 1
+                          pourcentageAccumule: 2
+                          notePonderee: 70
+                          date: '2022-02-24T00:00:00'
+                        - note: 3
+                          pourcentageAccumule: 4
+                          notePonderee: 78
+                          date: '2022-05-05T00:00:00'
+                        - note: 7
+                          pourcentageAccumule: 9
+                          notePonderee: 72
+                          date: '2022-05-05T00:00:00'
+                        - note: 15
+                          pourcentageAccumule: 19
+                          notePonderee: 81
+                          date: '2022-05-05T00:00:00'
+                        - note: 17
+                          pourcentageAccumule: 21
+                          notePonderee: 82
+                          date: '2022-05-05T00:00:00'
+                        - note: 34
+                          pourcentageAccumule: 41
+                          notePonderee: 83
+                          date: '2022-05-05T00:00:00'
+                        - note: 38
+                          pourcentageAccumule: 46
+                          notePonderee: 83
+                          date: '2022-05-13T00:00:00'
+                        - note: 42
+                          pourcentageAccumule: 51
+                          notePonderee: 82
+                          date: '2022-05-27T00:00:00'
+                        - note: 44
+                          pourcentageAccumule: 53
+                          notePonderee: 82
+                          date: '2022-05-27T00:00:00'
+                        - note: 45
+                          pourcentageAccumule: 55
+                          notePonderee: 82
+                          date: '2022-05-27T00:00:00'
+                        - note: 64
+                          pourcentageAccumule: 80
+                          notePonderee: 80
+                          date: '2022-05-27T00:00:00'
+                        - note: 68
+                          pourcentageAccumule: 85
+                          notePonderee: 80
+                          date: '2022-05-27T00:00:00'
+                        - note: 72
+                          pourcentageAccumule: 90
+                          notePonderee: 80
+                          date: '2022-05-27T00:00:00'
+                        - note: 74
+                          pourcentageAccumule: 95
+                          notePonderee: 78
+                          date: '2022-05-31T00:00:00'
+                      dataEvolutionMoyenneNoteEvaluation:
+                        - moyennePonderee: 95
+                          pourcentageAccumule: 2
+                          date: '2022-05-26T00:00:00'
+                        - moyennePonderee: 87
+                          pourcentageAccumule: 4
+                          date: '2022-05-26T00:00:00'
+                        - moyennePonderee: 82
+                          pourcentageAccumule: 9
+                          date: '2022-05-26T00:00:00'
+                        - moyennePonderee: 84
+                          pourcentageAccumule: 19
+                          date: '2022-05-26T00:00:00'
+                        - moyennePonderee: 83
+                          pourcentageAccumule: 21
+                          date: '2022-05-26T00:00:00'
+                        - moyennePonderee: 83
+                          pourcentageAccumule: 41
+                          date: '2022-05-26T00:00:00'
+                        - moyennePonderee: 83
+                          pourcentageAccumule: 46
+                          date: '2022-05-26T00:00:00'
+                        - moyennePonderee: 82
+                          pourcentageAccumule: 51
+                          date: '2022-05-27T00:00:00'
+                        - moyennePonderee: 82
+                          pourcentageAccumule: 53
+                          date: '2022-05-27T00:00:00'
+                        - moyennePonderee: 82
+                          pourcentageAccumule: 55
+                          date: '2022-05-27T00:00:00'
+                        - moyennePonderee: 80
+                          pourcentageAccumule: 80
+                          date: '2022-05-27T00:00:00'
+                        - moyennePonderee: 80
+                          pourcentageAccumule: 85
+                          date: '2022-05-27T00:00:00'
+                        - moyennePonderee: 79
+                          pourcentageAccumule: 90
+                          date: '2022-05-27T00:00:00'
+                        - moyennePonderee: 79
+                          pourcentageAccumule: 95
+                          date: '2022-05-31T00:00:00'
+                    - numeroCours: 601-101-MQ
+                      titreCours: Écriture et littérature
+                      numeroGroupe: '10007'
+                      classificationRisqueEchec: 0
+                      tendanceRisqueEchec: null
+                      etatReussite: 1
+                      noteFinale: 74
+                      ponderationNoteFinale: 100
+                      codeRemarqueFinal: ''
+                      moyenneNoteFinale: 77
+                      noteEvaluationProjetee: 74
+                      noteEvaluation: 74.3
+                      pourcentageAccumuleNoteEvaluation: 100
+                      moyenneGroupeNoteEvaluation: 76
+                      nbHeureAbsence: 0
+                      dataEvolutionNoteEvaluation:
+                        - note: 8
+                          pourcentageAccumule: 10
+                          notePonderee: 77
+                          date: '2022-03-28T00:00:00'
+                        - note: 16
+                          pourcentageAccumule: 25
+                          notePonderee: 66
+                          date: '2022-03-28T00:00:00'
+                        - note: 29
+                          pourcentageAccumule: 40
+                          notePonderee: 72
+                          date: '2022-04-21T00:00:00'
+                        - note: 49
+                          pourcentageAccumule: 65
+                          notePonderee: 75
+                          date: '2022-05-12T00:00:00'
+                        - note: 49
+                          pourcentageAccumule: 68
+                          notePonderee: 71
+                          date: '2022-05-13T00:00:00'
+                        - note: 51
+                          pourcentageAccumule: 70
+                          notePonderee: 72
+                          date: '2022-05-13T00:00:00'
+                        - note: 74
+                          pourcentageAccumule: 100
+                          notePonderee: 74
+                          date: '2022-05-31T00:00:00'
+                      dataEvolutionMoyenneNoteEvaluation:
+                        - moyennePonderee: 74
+                          pourcentageAccumule: 10
+                          date: '2022-03-28T00:00:00'
+                        - moyennePonderee: 76
+                          pourcentageAccumule: 25
+                          date: '2022-04-29T00:00:00'
+                        - moyennePonderee: 75
+                          pourcentageAccumule: 40
+                          date: '2022-05-12T00:00:00'
+                        - moyennePonderee: 76
+                          pourcentageAccumule: 65
+                          date: '2022-05-13T00:00:00'
+                        - moyennePonderee: 76
+                          pourcentageAccumule: 68
+                          date: '2022-05-13T00:00:00'
+                        - moyennePonderee: 76
+                          pourcentageAccumule: 70
+                          date: '2022-05-13T00:00:00'
+                        - moyennePonderee: 76
+                          pourcentageAccumule: 100
+                          date: '2022-05-31T00:00:00'
+      operationId: get-api-dalia-sessions-anSession-etudiants-idEtudiant-inscriptions
+      description: Permet d'obtenir la liste des inscriptions de l'étudiant à une session.
+  '/api/dalia/sessions/{anSession}/stats/abandons':
+    parameters:
+      - schema:
+          type: string
+        name: anSession
+        in: path
+        required: true
+        description: Année-session pour laquelle obtenir les statistiques.
+    get:
+      summary: Statistiques d'abandons pour une session
+      tags: []
+      responses:
+        '200':
+          description: Statistiques sur les abandons des étudiants pour une session.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: |-
+                      Statistiques sur l'abandon. Contient un enregistrement par classification.
+                      Même si aucun étudiant est associé à une classification, la classification sera retournée dans le array.
+                    items:
+                      type: object
+                      properties:
+                        classification:
+                          type: number
+                          description: |-
+                            Classification:
+                            0 = Non classé
+                            1 = En voie de persévérer
+                            2 = À surveiller
+                            3 = À risque d'abandon
+                        total:
+                          type: number
+                          description: Nombre d'étudiants ayant cette classification. Le record sera dans le array même si le total est de zéro.
+                      required:
+                        - classification
+                        - total
+                required:
+                  - data
+              examples:
+                example-1:
+                  value:
+                    data:
+                      - classification: 0
+                        total: 100
+                      - classification: 1
+                        total: 1234
+                      - classification: 2
+                        total: 652
+                      - classification: 3
+                        total: 353
+      operationId: get-api-sessions-anSession-stats-abandons
+      parameters:
+        - $ref: '#/components/parameters/filtres'
+      description: Permet d'obtenir les statistiques des abandons pour une session.
+  '/api/dalia/sessions/{anSession}/stats/echecs':
+    parameters:
+      - schema:
+          type: string
+        name: anSession
+        in: path
+        required: true
+        description: Année-session pour laquelle obtenir les statistiques.
+    get:
+      summary: Statistiques d'échecs pour une session
+      tags: []
+      responses:
+        '200':
+          description: Statistiques sur les échecs des étudiants pour une session.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: |-
+                      Statistiques sur les échecs. Contient un enregistrement par classification.
+                      Même si aucun étudiant est associé à une classification, la classification sera retournée dans le array.
+                    items:
+                      type: object
+                      properties:
+                        classification:
+                          type: number
+                          description: |-
+                            Classification:
+                            0 = Non classé
+                            1 = En voie de réussite
+                            2 = À surveiller
+                            3 = À risque d'échec
+                        total:
+                          type: number
+                          description: Nombre d'étudiants ayant cette classification. Le record sera dans le array même si le total est de zéro.
+                      required:
+                        - classification
+                        - total
+                required:
+                  - data
+              examples:
+                example-1:
+                  value:
+                    data:
+                      - classification: 0
+                        total: 100
+                      - classification: 1
+                        total: 1234
+                      - classification: 2
+                        total: 652
+                      - classification: 3
+                        total: 353
+      operationId: get-api-sessions-anSession-stats-schecs
+      parameters:
+        - $ref: '#/components/parameters/filtres'
+      description: Permet d'obtenir les statistiques des échecs pour une session.
+  '/api/dalia/filters/{objectName}':
+    get:
+      summary: Obtenir la liste des filtres
+      tags: []
+      responses:
+        '200':
+          description: Liste des filtres disponibles pour un objet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    propertyName:
+                      type: string
+                      description: Nom de la propriété
+                    display:
+                      type: string
+                      description: Titre du filtre en fonction de la langue de l'utilisateur.
+                    type:
+                      type: string
+                      description: |-
+                        Type de données:
+                        - string = Texte libre
+                        - int = Valeur numérique entière
+                        - bool = Valeur booléenne (true|false)
+                        - list = Liste de valeurs
+                  required:
+                    - propertyName
+                    - display
+                    - type
+      operationId: get-api-dalia-filters
+      description: ''
+    parameters:
+      - $ref: '#/components/parameters/objectName'
+  '/api/dalia/filters/{objectName}/values':
+    parameters:
+      - schema:
+          type: string
+        name: objectName
+        in: path
+        required: true
+        description: Nom de l'objet pour lequelle on désire obtenir la liste des valeurs possibles.
+    get:
+      summary: Obtenir la liste des valeurs valides pour des filtres
+      tags: []
+      responses: {}
+      operationId: get-api-dalia-filters-objectName-displayValues
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: filters
+          description: Filtre à utiliser (voir le modèle filtres-model)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  propertyName:
+                    type: string
+                  values:
+                    type: array
+                    description: Liste des valeurs possibles.
+                    items:
+                      type: object
+                      properties:
+                        value:
+                          type: string
+                          description: Valeur du filtre. C'est cette valeur qui doit être passée aux filtres.
+                        display:
+                          type: string
+                          description: |-
+                            Valeur à afficher à l'utilisateur.
+                            Null si le type de filtre n'est pas 'list' ou si le filtre contient des wildcards (?, *, _, %).
+                      required:
+                        - value
+                required:
+                  - propertyName
+                  - values
+            examples:
+              example-1:
+                value:
+                  - propertyName: programme
+                    values:
+                      - value: 420B0
+                        display: 420.B0 - Technique informatique
+                  - propertyName: coursARisque
+                    values:
+                      - value: '42012001'
+                        display: 420-120-01 - Programmation I
+                  - propertyName: search
+                    values:
+                      - value: test
+                        display: ''
+      description: Permet d'obtenir la liste des valeurs valides ainsi que le texte à afficher (display) pour les filtres reçus en paramètre.
+  '/api/dalia/filters/{objectName}/values/{propertyName}':
+    parameters:
+      - $ref: '#/components/parameters/objectName'
+      - schema:
+          type: string
+        name: propertyName
+        in: path
+        required: true
+        description: Nom de la propriété pour laquelle on désire obtenir la liste des valeurs possibles.
+    get:
+      summary: Liste des valeurs possibles pour un filtre
+      tags: []
+      responses:
+        '200':
+          description: Liste des valeurs possibles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    value:
+                      type: string
+                      description: Valeur du filtre. C'est cette valeur qui doit être passée aux filtres.
+                    display:
+                      type: string
+                      description: Valeur à afficher à l'utilisateur.
+                  required:
+                    - value
+                    - display
+              examples:
+                example-1:
+                  value:
+                    - value: string
+                      display: string
+      operationId: get-api-dalia-filters-valeurs
+      description: ''
+  '/api/dalia/userSettings/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+        description: Identifiant unique du filtre.
+    put:
+      summary: Sauvegarde d'un setting pour un utilisateur
+      operationId: put-api-data-filtresEnregistres-id
+      description: Sauvegarde d'un setting pour un utilisateur.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: string
+                  description: Valeur du setting.
+              required:
+                - value
+            examples:
+              example-1:
+                value:
+                  value: string
+    delete:
+      summary: Suppression d'un setting d'un utilisateur
+      operationId: delete-api-data-filtresEnregistres-id
+      description: Permet de supprimer un setting pour l'utilisateur.
+  '/api/dalia/etudiants/{idEtudiant}':
+    parameters:
+      - schema:
+          type: string
+        name: idEtudiant
+        in: path
+        required: true
+        description: idEtudiant crypté (reçu de la liste des étudiants)
+    get:
+      summary: Obtenir les informations sommaire d'un étudiant
+      tags: []
+      responses:
+        '200':
+          description: Informations de l'étudiant disponible.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  numero:
+                    type: string
+                    description: Numéro de l'étudiant formatté.
+                  nom:
+                    type: string
+                    description: Nom de l'étudiant.
+                  prenom:
+                    type: string
+                    description: Prénom de l'étudiant.
+                  anSession:
+                    description: Session utilisée pour retournée les données de l'étudiant.
+                    type: integer
+                  numeroProgramme:
+                    type: string
+                    description: Numéro de programme formatté.
+                  titreProgramme:
+                    type: string
+                    description: Titre du programme.
+                  spe:
+                    type: number
+                    description: SPE de l'étudiant.
+                  photo:
+                    type: string
+                    description: 'Photo en base64. Si pas de photo, donc null.'
+                  classificationRisqueAbandon:
+                    type: number
+                    description: |-
+                      Risque d'abandon:
+                      0 = Non classé
+                      1 = En voie de persévérer
+                      2 = À surveiller
+                      3 = À risque d'abandon
+                  classificationRisqueEchec:
+                    type: number
+                    description: |-
+                      Risque d'échec:
+                      0 = Non classé
+                      1 = En voie de réussite
+                      2 = À surveiller
+                      3 = À risque d'échec
+                  coterR:
+                    description: 'Code R de l''étudiant déjà formaté. Si pas présent, donc null.'
+                    type: string
+                  etatContratReussite:
+                    type: number
+                    description: |-
+                      État du contrat de réussite de l'étudiant:
+                      0 = Pas de contrat
+                      4 = Contrat à signer
+                      5 = Contrat signé
+                  dateHeureDerniereAnalyse:
+                    type: string
+                    description: 'Date et heure de la dernière analyse de l''étudiant. Si aucun calcul n''a été effectué, sera null.'
+                    format: date-time
+                required:
+                  - numero
+                  - nom
+                  - prenom
+                  - anSession
+                  - numeroProgramme
+                  - titreProgramme
+                  - spe
+                  - classificationRisqueAbandon
+                  - classificationRisqueEchec
+                  - etatContratReussite
+              examples:
+                example-1:
+                  value:
+                    numero: string
+                    nom: string
+                    prenom: string
+                    anSession: 0
+                    numeroProgramme: string
+                    titreProgramme: string
+                    spe: 0
+                    photo: string
+                    classificationRisqueAbandon: 0
+                    classificationRisqueEchec: 0
+                    coterR: string
+                    etatContratReussite: 0
+                    dateHeureDerniereAnalyse: '2022-04-04 23:25:44'
+      operationId: get-api-dalia-etudiants-idEtudiant
+      description: Permet d'obtenir les informations de base d'un étudiant à afficher dans le bandeau sur Dalia.
+  /api/dalia/etudiants/mio-send-url:
+    post:
+      summary: Obtenir le url pour envoyer un Mio à des étudiants
+      tags: []
+      responses:
+        '200':
+          description: Url à utiliser.
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Url de redirection vers le module MIO d'omnivox
+              examples:
+                example-1:
+                  value: 'http:.../WebApplication/Module.MIOP/Default.aspx?ActionDefaut=EcrireMio2&idn=idnouveaumessage'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              examples:
+                example-1:
+                  value:
+                    status: NotFound
+                    code: '404'
+                    message: 'Étudiant non trouvé: 1234crypté'
+      operationId: get-api-dalia-sendmiotousers
+      description: Permet d'obtenir le url de redirection vers un nouveau Mio avec une liste de destinataires par défaut.
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idEtudiants:
+                  type: string
+                  description: Liste des id d'étudiants cryptés séparés par des virgules pour lesquels on veut envoyer un mio.
+            examples:
+              example-1:
+                value:
+                  idEtudiants: '1234crypte1,1234crypte2,1234crypte3'
+        description: On envoie les idEtudiants dans le body à la place des queryParams
+    parameters: []
+  /api/dalia/sessions:
+    get:
+      summary: Obtenir la liste des année-sessions
+      tags: []
+      responses:
+        '200':
+          description: 'Liste des sessions. (Si pas en QA, la liste retournera uniquement >= 20223)'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    anSession:
+                      type: integer
+                      description: Année-session (format yyyys).
+                    titre:
+                      type: string
+                      description: Titre de la session (dans la langue de l'utilisateur).
+                    saison:
+                      type: string
+                      description: |-
+                        Lettre de la saison:
+                        - H = Hiver
+                        - E = Été
+                        - P = Printemps
+                        - A = Automne
+                    indicateurCourante:
+                      type: boolean
+                      description: |-
+                        Indique si la session est la session courante.
+                        On devrait avoir une seule session courante dans la liste.
+                  required:
+                    - anSession
+                    - titre
+                    - saison
+                    - indicateurCourante
+              examples:
+                example-1:
+                  value:
+                    - anSession: 20221
+                      titre: Hiver 2022
+                      saison: H
+                    - anSession: 20222
+                      titre: Été 2022
+                      saison: E
+                    - anSession: 20223
+                      titre: Automne 2022
+                      saison: A
+      operationId: get-api-dalia-sessions
+components:
+  schemas:
+    validation-error:
+      title: validation-error
+      type: object
+      description: Modèle pour retourner les erreurs de validation.
+      x-examples:
+        example-1:
+          status: '400'
+          code: ValidationError
+          message: Au moins un champ est invalide.
+          errors:
+            - field: Nom
+              message: Le nom est requis.
+      properties:
+        status:
+          type: string
+          description: |-
+            Code du HttpStatus associé. Devrait correspondre au httpstatus retourné par le serveur http.
+            Toujours 400.
+        code:
+          type: string
+          description: |-
+            Code d'erreur.
+            Toujours: ValidationError
+        message:
+          type: string
+          description: |
+            Message globale de l'erreur de validation.
+            Optionnel si uniquement des erreurs sur les champs sont présents.
+        errors:
+          type: array
+          description: |-
+            Liste des erreurs de validation.
+
+            À noter que si plusieurs erreurs de validation existent pour un même champ, ces erreurs seront concaténées dans le champ message. Donc, un champ ne pourra pas être présent plus d'un fois dans la liste. Idem pour les erreurs globales.
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Nom du champ.
+              message:
+                type: string
+                description: 'Description de l''erreur de validation. Si plusieurs erreurs pour le même champ, les erreurs seront séparées par des \r\n.'
+            required:
+              - field
+              - message
+      required:
+        - status
+        - code
+        - errors
+    error:
+      title: error
+      type: object
+      description: Modèle pour les erreurs de traitement.
+      properties:
+        status:
+          type: string
+          description: Code du HttpStatus associé. Devrait correspondre au httpstatus retourné par le serveur http.
+        code:
+          type: string
+          description: Code d'erreur
+        message:
+          type: string
+          description: Message de l'erreur.
+      required:
+        - status
+        - code
+        - message
+    data-list:
+      title: data-list
+      x-stoplight:
+        id: qyq3nmtgnsuj4
+      type: object
+      description: Retour des données sous format d'une liste.
+      x-internal: false
+      x-examples:
+        example-1:
+          total: 0
+          count: 0
+          totalPages: 0
+      properties:
+        total:
+          type: integer
+          description: Nombre total de records.
+        count:
+          type: number
+          description: Nombre de records retournés.
+        totalPages:
+          type: integer
+          description: Nombre total de pages.
+    filtres-model:
+      title: filtres-model
+      x-stoplight:
+        id: ou0dmiwy0600x
+      type: object
+      description: |
+        Filtre à utiliser dans une querystring pour la recherche d'étudiants et de stats.
+
+        Format: {"propertyName":["value1", "value2"],"propertyName2":["value1", "value2"],"search":"valeur"}
+
+        Chaque propriété est considéré comme un AND alors que chaque valeur est un OR.
+
+        À noter que la propriété "search" est un filtre spécial optionnel qui reçoit une seule valeur et qui permet d'effectuer une recherche 'rapide' sur plusieurs champs. La liste des champs est personnalisée dans le backend pour chaque objet.
+
+        ## Gestion des string
+        Pour les filtres sur des propriétés 'string', l'utilisation des wildcards est autorisé (*, ?, _, %).
+        - '*' ou '%' = Remplace n'importe quel caractère
+        - '?' ou '_' = Remplace un caractère
+
+        **Pour les noms et prénoms:** Si aucun caractère de remplacement n'est présent dans la valeur du filtre, un * est ajouté à la fin automatiquement.
+
+        ## Gestion des valeurs numériques et dates
+        Pour les filtres sur des propriétés numériques ou date, l'utilisation des opérateurs est permis.
+        Si pas d'opérateur de spécifié, l'opérateur égal sera utilisé.
+
+        Format des dates: 'yyyy-MM-dd' ou 'yyyy-MM-dd HH:mm:ss'.
+
+        Il existe 2 manières d'utiliser les opérateurs:
+        - Directement dans la value, ex: [">=6"]
+        - Dans une value précédente: ex: [">=","6"]
+
+
+        ### Opérateurs:
+        - '=' ou '==' : La propriété doit être égale
+        - '<' : La propriété doit être plus petite
+        - '<=' ou '≤' : La propriété doit être plus petite ou égale
+        - '>' : La propriété doit être plus grande
+        - '>=' ou '≥' : La propriété doit être plus grande ou égale
+        - 'A..B' : La propriété doit être entre A et B (inclusivement). À noter que pour les types date, la valeur de B sera mise à 23:59:59 si aucune heure, minute, seconde n'est spécifié.
+
+        ## Exemples:
+
+        Recherche les étudiants qui possèdent le cours à risque '000ARP00':
+
+            filters={"coursARisque":["000ARP00"]}
+
+
+        Recherche les étudiants qui possède 6 cours et plus:
+
+            filters={"nbCours":["≥","6"]}
+
+        Recherche les étudiants qui dont la date de dernier suivi est entre 2022-01-01 et 2022-02-01:
+
+            filters={"dateHeureDerniereIntervention":["2022-01-01..2022-02-01"]}
+            
+        Recherche des étudiants dont le prénom commence par 'Gui' et dont la SPE est 1, 2 ou 3:
+
+            filters={"prenom":["Gui*"],"spe":["1","2","3"]}
+      x-examples:
+        example-1:
+          uniteOrg:
+            - REG
+          programme:
+            - 420.A0
+            - 300.B0
+          search: Auger
+      properties:
+        '[propertyName]':
+          type: array
+          description: |-
+            Liste des filtres sous forme de dictionaire properyName/liste de valeurs.
+
+            Pour les filtres sur les propriétés numériques, il est possible de précéder la valeur par <= ou >= afin d'indiquer un opérateur a appliquer.
+          items:
+            type: string
+        search:
+          type: string
+          description: Élément de recherche global saisie par l'utilisateur au dessus du tableau. (optionnel)
+  parameters:
+    objectName:
+      name: objectName
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+          - sessionsEtudiants
+      description: Nom de l'objet pour lequelle on désire obtenir la liste des valeurs possibles.
+    queryOutput:
+      name: queryOutput
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - JSON
+          - CSV
+        example: CSV
+      description: Permet de recevoir l'output de l'API sous format CSV à la place d'un retour json (Vous devez passez CSV comme valeur. N'importe quoi d'autre va être interpréter comme du JSON)
+      allowEmptyValue: true
+    filters:
+      name: filters
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Filtre à utiliser (voir le modèle filtres-model)
+    filtres:
+      name: filtres
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Filtres selon le modèle (filtres-model).

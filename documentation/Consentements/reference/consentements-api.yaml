@@ -1,0 +1,496 @@
+openapi: 3.0.0
+x-stoplight:
+  id: 0sv47uvplvo79
+info:
+  title: consentements-api
+  version: '1.0'
+  description: |
+    Contient les EndPoints pour l'application Consentements.
+
+    # Codes d'erreur standards
+    - 400 Bad Request : La requête est mal formattée ou un paramètre est manquant ou invalide (erreur de validation).
+    - 401 Unauthorized : L'utilisateur n'est pas connecté ou son cookie de session a expiré. L'utilisateur devrait être redirigé à l'accueil du portail ( '/' )
+    - 403 Forbidden : L'utilisateur n'a pas accès au EndPoint demandé.
+    - 404 Not Found : Le EndPoint demandé n'existe pas ou le record n'existe pas.
+    - 405 Method Not Allowed : Le EndPoint demandé existe mais la méthode HTTP est invalide.
+    - 500 Internal Server Error : Une erreur de traitement est survenue.
+
+    Les erreurs sont accompagnés d'un contenu standard d'erreur, voir le modèle "error".
+
+
+    # Authentification
+    Le oid et la langue seront envoyés au OmnivoxNode via le context. La validation des accès sera faite à partir du oid qui représente l'utilisateur qui est connecté sur le web.
+servers:
+  - url: 'http://localhost:3332'
+    description: OmnivoxNode
+components:
+  schemas:
+    validation-error:
+      title: validation-error
+      type: object
+      description: Modèle pour retourner les erreurs de validation.
+      x-examples:
+        example-1:
+          status: '400'
+          code: ValidationError
+          message: Au moins un champ est invalide.
+          errors:
+            - field: Nom
+              message: Le nom est requis.
+      properties:
+        status:
+          type: string
+          description: |-
+            Code du HttpStatus associé. Devrait correspondre au httpstatus retourné par le serveur http.
+            Toujours 400.
+        code:
+          type: string
+          description: |-
+            Code d'erreur.
+            Toujours: ValidationError
+        message:
+          type: string
+          description: |
+            Message globale de l'erreur de validation.
+            Optionnel si uniquement des erreurs sur les champs sont présents.
+        errors:
+          type: array
+          description: |-
+            Liste des erreurs de validation.
+
+            À noter que si plusieurs erreurs de validation existent pour un même champ, ces erreurs seront concaténées dans le champ message. Donc, un champ ne pourra pas être présent plus d'un fois dans la liste. Idem pour les erreurs globales.
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Nom du champ.
+              message:
+                type: string
+                description: 'Description de l''erreur de validation. Si plusieurs erreurs pour le même champ, les erreurs seront séparées par des \r\n.'
+            required:
+              - field
+              - message
+      required:
+        - status
+        - code
+        - errors
+    error:
+      title: error
+      type: object
+      description: Modèle pour les erreurs de traitement.
+      properties:
+        status:
+          type: string
+          description: Code du HttpStatus associé. Devrait correspondre au httpstatus retourné par le serveur http.
+        code:
+          type: string
+          description: Code d'erreur
+        message:
+          type: string
+          description: Message de l'erreur.
+      required:
+        - status
+        - code
+        - message
+      x-examples:
+        example-1:
+          status: string
+          code: string
+          message: string
+    data-list:
+      title: data-list
+      x-stoplight:
+        id: qyq3nmtgnsuj4
+      type: object
+      description: Retour des données sous format d'une liste.
+      x-internal: false
+      x-examples:
+        example-1:
+          total: 0
+          count: 0
+          totalPages: 0
+      properties:
+        total:
+          type: integer
+          description: Nombre total de records.
+        count:
+          type: number
+          description: Nombre de records retournés.
+        totalPages:
+          type: integer
+          description: Nombre total de pages.
+      required:
+        - total
+        - count
+        - totalPages
+    filtres-model:
+      title: filtres-model
+      x-stoplight:
+        id: ou0dmiwy0600x
+      type: object
+      description: |
+        Filtre à utiliser dans une querystring pour les différentes recherches.
+
+        Format: {"propertyName":["value1", "value2"],"propertyName2":["value1", "value2"],"search":"valeur"}
+
+        Chaque propriété est considéré comme un AND alors que chaque valeur est un OR.
+
+        À noter que la propriété "search" est un filtre spécial optionnel qui reçoit une seule valeur et qui permet d'effectuer une recherche 'rapide' sur plusieurs champs. La liste des champs est personnalisée dans le backend pour chaque objet.
+
+        ## Gestion des string
+        Pour les filtres sur des propriétés 'string', l'utilisation des wildcards est autorisé (*, ?, _, %).
+        - '*' ou '%' = Remplace n'importe quel caractère
+        - '?' ou '_' = Remplace un caractère
+
+        **Pour les noms et prénoms:**
+        Si aucun caractère de remplacement n'est présent dans la valeur du filtre, un * est ajouté à la fin automatiquement.
+
+        ## Gestion des valeurs numériques et dates
+        Pour les filtres sur des propriétés numériques ou date, l'utilisation des opérateurs est permis.
+        Si pas d'opérateur de spécifié, l'opérateur égal sera utilisé.
+
+        Format des dates: 'yyyy-MM-dd' ou 'yyyy-MM-dd HH:mm:ss'.
+
+        Il existe 2 manières d'utiliser les opérateurs:
+        - Directement dans la value, ex: [">=6"]
+        - Dans une value précédente: ex: [">=","6"]
+
+
+        ### Opérateurs:
+        - '=' ou '==' : La propriété doit être égale
+        - '<' : La propriété doit être plus petite
+        - '<=' ou '≤' : La propriété doit être plus petite ou égale
+        - '>' : La propriété doit être plus grande
+        - '>=' ou '≥' : La propriété doit être plus grande ou égale
+        - 'A..B' : La propriété doit être entre A et B (inclusivement). À noter que pour les types date, la valeur de B sera mise à 23:59:59 si aucune heure, minute, seconde n'est spécifié.
+
+        ## Exemples:
+
+        Recherche les étudiants qui possèdent le cours à risque '000ARP00':
+
+            filters={"coursARisque":["000ARP00"]}
+
+
+        Recherche les étudiants qui possède 6 cours et plus:
+
+            filters={"nbCours":["≥","6"]}
+
+        Recherche les étudiants qui dont la date de dernier suivi est entre 2022-01-01 et 2022-02-01:
+
+            filters={"dateHeureDerniereIntervention":["2022-01-01..2022-02-01"]}
+            
+        Recherche des étudiants dont le prénom commence par 'Gui' et dont la SPE est 1, 2 ou 3:
+
+            filters={"prenom":["Gui*"],"spe":["1","2","3"]}
+      examples:
+        - uniteOrg:
+            - REG
+          programme:
+            - 420.A0
+            - 300.B0
+      x-examples:
+        example-1:
+          uniteOrg:
+            - REG
+          programme:
+            - 420.A0
+            - 300.B0
+          search: Auger
+      properties:
+        '[propertyName]':
+          type: array
+          description: Liste des filtres sous forme de dictionaire properyName/liste de valeurs.
+          items:
+            type: string
+        search:
+          type: string
+          description: Élément de recherche global saisie par l'utilisateur au dessus du tableau. (optionnel)
+  parameters:
+    queryOutput:
+      name: queryOutput
+      in: query
+      schema:
+        type: string
+        enum:
+          - JSON
+          - CSV
+        example: CSV
+      description: Permet de recevoir l'output de l'API sous format CSV à la place d'un retour json (Vous devez passez CSV comme valeur. N'importe quoi d'autre va être interpréter comme du JSON)
+paths:
+  /consentements/etudiants/consentements:
+    get:
+      summary: Liste des consentements d'un étudiant
+      tags: []
+      responses:
+        '200':
+          description: 'Liste des consentements. Si aucun consentement, la liste sera vide.'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    idConsentement:
+                      type: string
+                      description: ID crypté du consentement
+                    titre:
+                      type: string
+                      description: Titre du consentement dans la langue courante de l'étudiant.
+                    etatSignature:
+                      type: string
+                      description: |-
+                        État du consentement pour l'étudiant:
+                        - X = Consentement à effectuer
+                        - N = Nouvelle version du consentement à signer
+                        - A = Approuvé
+                        - R = Refusé
+                    typeConsentement:
+                      type: string
+                      description: |-
+                        Type de consentement:
+                        - GENERAL = Consentement général n'ayant pas d'impact dans le système
+                        - DALIA = Consentement pour afficher les prédictions de l'étudiant dans Dalia
+                    dateSignature:
+                      type: string
+                      format: date-time
+                      description: Date et heure de la signature (acceptation ou refus) de l'étudiant. null si pas encore signé le consentement.
+                      nullable: true
+                    dateExpiration:
+                      type: string
+                      format: date-time
+                      description: Date d'expiration de la signature (null si pas signé).
+                      nullable: true
+              examples:
+                example-1:
+                  value:
+                    - idConsentement: HBUUH9ro2fhjORJFt5ezOA
+                      titre: Consentement pour Dalia
+                      texte: |-
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc interdum elit eu justo elementum efficitur. Vivamus sem odio, mattis et dictum nec, ultricies nec urna. Quisque sollicitudin eget massa vel interdum. Cras non massa ultrices, dictum magna rutrum, posuere justo. Integer cursus leo in risus pulvinar, et faucibus quam vestibulum. Suspendisse quis consequat velit, eget imperdiet dolor. Morbi tempus mi urna, quis semper odio commodo sit amet.
+                        Proin rutrum risus quis ullamcorper vestibulum. Donec eget ex justo. Donec iaculis massa nec efficitur hendrerit. Nunc ut erat eu nulla fermentum ultricies nec eu massa. Donec a nulla nisi. Quisque eu vehicula libero. Etiam ac condimentum dolor, a placerat sem. Aenean egestas vestibulum leo ut venenatis. Vestibulum lorem ex, scelerisque facilisis ex lacinia, tempor volutpat orci. Pellentesque feugiat pharetra lacinia. Vivamus dui nulla, pharetra quis venenatis quis, laoreet ut ante. Duis ac interdum purus. Ut ut ligula elementum, congue ante et, viverra est. Cras magna nulla, vehicula eget tincidunt id, varius sed lorem. Morbi euismod et est eget malesuada.
+                        Maecenas enim sapien, semper nec dapibus id, posuere quis nunc. Praesent facilisis ultricies magna vestibulum mollis. Aenean sed convallis nisl. Curabitur quis purus facilisis, tempor tellus et, mollis quam. Quisque fringilla blandit vehicula. Aenean in commodo libero. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Etiam in eros mi. Nulla malesuada est pulvinar est laoreet, vitae ultrices enim lobortis. In nec facilisis augue. Fusce id eros est. Quisque nec tempor nunc. Ut lacinia sit amet sapien ut luctus. Sed tempus eros in hendrerit elementum. Phasellus nibh lorem, bibendum nec mauris vel, condimentum vulputate neque.
+                        Curabitur porttitor elit et ante vulputate, eget convallis mauris ullamcorper. Nulla a pulvinar orci. In sed posuere odio. Integer eu fringilla dui. Nulla facilisi. Duis convallis pharetra sem feugiat gravida. In a aliquam nulla. Mauris id dolor sit amet eros luctus dictum. Praesent tempor ultricies nisl, at venenatis nisi finibus vel. Proin elementum augue enim, at ultrices enim euismod nec. Aenean maximus neque mollis leo dignissim aliquet. Sed at aliquam est, sit amet auctor orci. Nulla ex felis, vulputate vitae velit sed, eleifend rhoncus elit.
+                        Vestibulum egestas, lorem at faucibus lacinia, nisi purus tempor erat, sit amet feugiat quam nunc in quam. Vestibulum imperdiet tempor enim, et tincidunt ipsum consequat quis. Mauris id eros nec augue pellentesque molestie ac eu tortor. Duis tempor euismod libero id viverra. Vestibulum in enim magna. Quisque tristique accumsan magna in tincidunt. Integer at dignissim urna. Aliquam erat volutpat. Vestibulum vitae nulla dignissim, vestibulum velit eget, mollis urna.
+                      texteRefus: 'Vestibulum egestas, lorem at faucibus lacinia, nisi purus tempor erat, sit amet feugiat quam nunc in quam. Vestibulum imperdiet tempor enim, et tincidunt ipsum consequat quis. Mauris id eros nec augue pellentesque molestie ac eu tortor. Duis tempor euismod libero id viverra. Vestibulum in enim magna. Quisque tristique accumsan magna in tincidunt. Integer at dignissim urna. Aliquam erat volutpat. Vestibulum vitae nulla dignissim, vestibulum velit eget, mollis urna.'
+                      typeDateExpiration: MOIS
+                      etatSignature: string
+                      dateSignature: '2019-08-24T14:15:22Z'
+      operationId: get-consentements-etudiants
+      description: Permet d'obtenir la liste des consentements ainsi que l'état de ceux-ci pour l'étudiant actuellement connecté.
+    parameters: []
+  '/consentements/etudiants/consentements/{idConsentement}':
+    parameters:
+      - schema:
+          type: string
+        name: idConsentement
+        in: path
+        required: true
+    get:
+      summary: Obtenir l'information d'un consentement
+      tags: []
+      responses:
+        '200':
+          description: Information sur un consentement
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  idConsentement:
+                    type: string
+                    description: ID crypté du consentement
+                  titre:
+                    type: string
+                    description: Titre du consentement dans la langue courante de l'étudiant.
+                  typeConsentement:
+                    type: string
+                    description: |-
+                      Type de consentement:
+                      - GENERAL = Consentement général n'ayant pas d'impact dans le système
+                      - DALIA = Consentement pour afficher les prédictions de l'étudiant dans Dalia
+                  texte:
+                    type: string
+                    description: Texte du consentement
+                  texteRefus:
+                    type: string
+                    description: 'Texte à afficher à l''étudiant quand il veut refuser pour l''informer de l''impact de son refus. Si null, pas de texte de refus.'
+                    nullable: true
+                  typeDureeExpiration:
+                    type: string
+                    description: |-
+                      Type de date d'expiration:
+                      - MOIS: Nombre de mois dans durée d'expiration
+                      - ANNEE: Nombre d'année dans la durée d'expiration
+                      - ETUDES: Expire à la fin des études
+                  dureeExpiration:
+                    type: number
+                    description: Durée du consentement en fonction du 'typeDureeExpirasion'. Nombre de mois ou nombre d'année ou null si type = 'ETUDES'.
+                    nullable: true
+                  indicateurAcceptationObligatoire:
+                    type: boolean
+                    description: 'Indique si l''étudiant doit absolument accepter ce consentement. S''il refuse, il pourra pas aller au collège!'
+                  indicateurPeutEtreRemisAPlusTard:
+                    type: boolean
+                    description: Indique si l'étudiant peut remettre à plus tard le consentement (l'étudiant ne peut pas remettre à plus tard plus d'une fois le même consentement).
+        '403':
+          description: L'étudiant n'a pas accès au consentement passé en paramètre.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              examples:
+                example-1:
+                  value:
+                    status: '403'
+                    code: Forbidden
+                    message: L'étudiant n'a pas accès au consentement passé en paramètre.
+      operationId: get-consentements-consentements-idConsentement
+      description: Permet d'obtenir les détails d'un consentement.
+  '/consentements/etudiants/consentements/{idConsentement}/accepter':
+    parameters:
+      - schema:
+          type: string
+        name: idConsentement
+        in: path
+        required: true
+        description: ID du consentement crypté.
+    put:
+      summary: Acceptation d'un consentement par l'étudiant
+      tags: []
+      responses:
+        '200':
+          description: Consentement signé avec succès.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  test:
+                    type: string
+        '403':
+          description: L'étudiant n'a pas accès au consentement passé en paramètre.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              examples:
+                example-1:
+                  value:
+                    status: '403'
+                    code: Forbidden
+                    message: L'étudiant n'a pas accès au consentement passé en paramètre.
+        '404':
+          description: Consentement inexistant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              examples:
+                example-1:
+                  value:
+                    status: '404'
+                    code: NotFound
+                    message: Consentement inexistant.
+      operationId: put-consentements-etudiants-accepter-idConsentement
+      description: Permet à l'étudiant courant d'accepter un consentement.
+  '/consentements/etudiants/consentements/{idConsentement}/refuser':
+    parameters:
+      - schema:
+          type: string
+        name: idConsentement
+        in: path
+        required: true
+        description: ID du consentement crypté.
+    put:
+      summary: Refus d'un consentement par l'étudiant
+      tags: []
+      responses:
+        '200':
+          description: Consentement refusé avec succès.
+        '403':
+          description: L'étudiant n'a pas accès au consentement passé en paramètre.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              examples:
+                example-1:
+                  value:
+                    status: '403'
+                    code: Forbidden
+                    message: L'étudiant n'a pas accès au consentement passé en paramètre.
+        '404':
+          description: Consentement inexistant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              examples:
+                example-1:
+                  value:
+                    status: '404'
+                    code: NotFound
+                    message: Consentement inexistant.
+      operationId: put-consentements-etudiants-refuser-idConsentement
+      description: Permet à l'étudiant courant de refuser un consentement.
+  '/consentements/etudiants/consentements/{idConsentement}/remettre-plus-tard':
+    parameters:
+      - schema:
+          type: string
+        name: idConsentement
+        in: path
+        required: true
+        description: ID du consentement crypté.
+    put:
+      summary: Remise à plus tard d'un consentement par l'étudiant
+      tags: []
+      responses:
+        '200':
+          description: Remise à plus tard effectuée avec succès.
+        '400':
+          description: Demande invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validation-error'
+              examples:
+                exemple-1:
+                  value:
+                    status: '400'
+                    code: ValidationError
+                    message: Ce consentement a déjà été remis à plus tard au moins une fois.
+                    errors: []
+        '403':
+          description: L'étudiant n'a pas accès au consentement passé en paramètre.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              examples:
+                example-1:
+                  value:
+                    status: '403'
+                    code: Forbidden
+                    message: L'étudiant n'a pas accès au consentement passé en paramètre.
+        '404':
+          description: Consentement inexistant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              examples:
+                example-1:
+                  value:
+                    status: '404'
+                    code: NotFound
+                    message: Consentement inexistant.
+      operationId: put-consentements-etudiants-remettre-plus-tard-idConsentement
+      description: |-
+        Permet à l'étudiant de remettre à plus tard la signature d'un consentement.
+
+
+        # Validations #
+
+        - L'étudiant a déjà remis à plus tard ce consentement => "Ce consentement a déjà été remis à plus tard au moins une fois."

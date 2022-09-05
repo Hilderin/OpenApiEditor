@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "OpenApiEditor (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "OpenApiEditor (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

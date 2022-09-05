@@ -1,0 +1,305 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: API Demo
+  license: {}
+  description: ''
+servers:
+  - url: 'http://localhost:3332'
+paths:
+  /api/demo/parametres:
+    get:
+      summary: Liste des paramètres
+      operationId: list-api-demo-parametres
+      parameters: []
+      responses:
+        '200':
+          description: Array de paramètres.
+          headers: {}
+          content:
+            application/json:
+              schema:
+                description: ''
+                x-examples:
+                  example-1:
+                    id: string
+                type: array
+                items:
+                  $ref: '#/components/schemas/parametre-full'
+      description: Permet d'obtenir la liste des paramètres.
+      tags:
+        - Paramètres
+    parameters: []
+    post:
+      summary: Ajout d'un paramètre
+      operationId: post-api-demo-parametres
+      responses:
+        '200':
+          description: Paramètre ajouté avec succès.
+      description: Permet d'ajouter un paramètre.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/parametre-partial'
+            examples:
+              example-1:
+                value:
+                  codeParametre: TEST
+                  valeur: Valeur de test
+      tags:
+        - Paramètres
+  '/api/demo/parametres/{idParametre}':
+    get:
+      summary: Obtenir un paramètre
+      operationId: get-demo-parametre
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/parametre-full'
+        '201':
+          description: Created
+      description: Permet d'obtenir un paramètre.
+      tags:
+        - Paramètres
+    parameters:
+      - schema:
+          type: string
+        name: idParametre
+        in: path
+        description: ID du paramètre
+    delete:
+      summary: ''
+      operationId: delete-api-demo-parametres-idParametre
+      responses:
+        '200':
+          description: Paramètre supprimé.
+      description: Suppression d'un paramètre.
+      tags:
+        - Paramètres
+    put:
+      summary: ''
+      operationId: put-api-demo-parametres-idParametre
+      responses:
+        '200':
+          description: Paramètre modifié avec succès.
+      description: Mise à jour d'un paramètre.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/parametre-partial'
+      tags:
+        - Paramètres
+  '/api/demo/locales/{namespace}':
+    get:
+      summary: Obtention des localisations
+      tags:
+        - Localisations
+      responses:
+        '200':
+          description: Dictionnaire MsgId/Message.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  MsgId:
+                    type: string
+                    description: Contient les phrases dans un dictionnaire clé/valeur.
+              examples:
+                example-1:
+                  value:
+                    Titre: Paramètres
+                    Code: Code
+                    Valeur: Valeur
+      operationId: get-api-demo-locales
+      description: |-
+        Permet d'obtenir les phrases du dictionnaire D:\Omnivox\Web\InterfaceWeb\DICTIO\Dictio.Demo.msg
+
+        Le code de client est déterminé à partir du domaine.
+        La langue est trouvé à déterminé du cookie "L".
+        Le campus est déterminé à partir de l'étudiant dans le TKS.
+    parameters:
+      - schema:
+          type: string
+        name: namespace
+        in: path
+        description: 'Préfix des phrases du dictionnaire. Si non spécifié, retourne toutes les phrases du dictio.'
+  /api/demo/errors:
+    post:
+      summary: ''
+      operationId: post-errors
+      responses:
+        '200':
+          description: Erreur enregistrée avec succès.
+      description: Permet d'envoyer une erreur de traitement à Omnivox.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                description:
+                  type: string
+              required:
+                - code
+                - description
+            examples:
+              example-1:
+                value:
+                  code: DEMO_0000
+                  description: Erreur dans la sauvegarde d'un paramètre.
+      tags:
+        - Erreurs
+    parameters: []
+  /api/demo/init:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - Initialisation
+      responses: {}
+      operationId: get-api-demo-init
+      description: Retourne les informations pour l'initialisation de l'application.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                langueISO:
+                  type: string
+                  description: |-
+                    Code de langue selon les standards ISO.
+                    Langues supportées:
+                    fr-CA = Français
+                    en-CA = Anglais
+                    es-CO = Espagnol Colombie
+                    es-ES = Espagnol (Européen)
+                returnUrl:
+                  type: string
+  /api/demo/user:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - Utilisateur
+      responses: {}
+      operationId: get-api-demo-user
+      description: Permet d'obtenir l'information sur l'utilisation connecté.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nom:
+                  type: string
+                  description: Nom de l'utilisateur.
+                prenom:
+                  type: string
+                  description: Prénom de l'utilisateur.
+                numero:
+                  type: string
+                  description: Numéro de l'utilisateur (numéro d'étudiant/employé)
+                id:
+                  type: string
+                  description: OID crypté.
+components:
+  schemas:
+    parametre-partial:
+      title: parametre-partial
+      type: object
+      properties:
+        codeParametre:
+          type: string
+          description: Code du paramètre
+        valeur:
+          type: string
+          description: Valeur du paramètre.
+      required:
+        - codeParametre
+        - valeur
+      description: Modèle partiel d'un paramètre pour les ajouts et les modifications.
+    parametre-full:
+      title: parametre-full
+      allOf:
+        - type: object
+          properties:
+            idParametre:
+              type: string
+              description: Identifiant du paramètre.
+          required:
+            - idParametre
+        - $ref: '#/components/schemas/parametre-partial'
+      description: Modèle complet d'un paramètre.
+    validation-error:
+      title: validation-error
+      type: object
+      description: Modèle pour retourner les erreurs de validation.
+      x-examples:
+        example-1:
+          status: '400'
+          code: ValidationError
+          message: Au moins un champ est invalide.
+          errors:
+            - field: Nom
+              message: Le nom est requis.
+      properties:
+        status:
+          type: string
+          description: Code du HttpStatus associé. Devrait correspondre au httpstatus retourné par le serveur http.
+        code:
+          type: string
+          description: |-
+            Code d'erreur
+            Toujours: ValidationError
+        message:
+          type: string
+          description: |-
+            Message globale de l'erreur de validation.
+            Optionnel si uniquement des erreurs sur des champs sont présents.
+        errors:
+          type: array
+          description: |-
+            Liste des erreurs de validation.
+
+            À noter que si plusieurs erreurs de validation existent pour un même champ, ces erreurs seront concaténées dans le champ message. Donc, un champ ne pourra pas être présent plus d'un fois dans la liste. Idem pour les erreurs globales.
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Nom du champ.
+              message:
+                type: string
+                description: 'Description de l''erreur de validation. Si plusieurs erreurs pour le même champ, les erreurs seront séparées par des \r\n.'
+            required:
+              - field
+              - message
+      required:
+        - status
+        - code
+        - errors
+    error:
+      title: error
+      type: object
+      description: Modèle pour les erreurs de traitement.
+      properties:
+        status:
+          type: string
+          description: Code du HttpStatus associé. Devrait correspondre au httpstatus retourné par le serveur http.
+        code:
+          type: string
+          description: Code d'erreur
+        message:
+          type: string
+          description: Message de l'erreur.
+      required:
+        - status
+        - code
+        - message
